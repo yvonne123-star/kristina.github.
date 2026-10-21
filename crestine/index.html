@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PingPong Ball Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#08111f;
+      --bg-2:#0f1c31;
+      --panel:rgba(255,255,255,0.08);
+      --panel-border:rgba(255,255,255,0.14);
+      --text:#edf4ff;
+      --muted:#a9bbd6;
+      --accent:#6ee7ff;
+      --accent-2:#8b5cf6;
+      --hit:#22c55e;
+      --danger:#fb7185;
+      --shadow:0 20px 60px rgba(0,0,0,0.35);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      font-family:"Inter", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 15% 20%, rgba(110,231,255,0.18), transparent 22%),
+        radial-gradient(circle at 85% 15%, rgba(139,92,246,0.18), transparent 22%),
+        radial-gradient(circle at 50% 80%, rgba(34,197,94,0.08), transparent 26%),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px);
+      background-size:28px 28px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.7), transparent 90%);
+    }
+
+    .page{
+      width:min(1200px, calc(100% - 32px));
+      margin:0 auto;
+      padding:24px 0 36px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:22px;
+      align-items:stretch;
+    }
+
+    .intro,
+    .game-panel,
+    .code-panel{
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:var(--radius);
+      backdrop-filter:blur(14px);
+      box-shadow:var(--shadow);
+    }
+
+    .intro{
+      padding:28px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:240px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .intro::after{
+      content:"PINGPONG";
+      position:absolute;
+      right:-10px;
+      bottom:-18px;
+      font-family:"Bebas Neue", sans-serif;
+      font-size:clamp(5rem, 12vw, 10rem);
+      line-height:1;
+      letter-spacing:.06em;
+      color:rgba(255,255,255,0.05);
+      pointer-events:none;
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      color:var(--accent);
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      font-size:.8rem;
+    }
+
+    .eyebrow::before{
+      content:"";
+      width:34px;
+      height:2px;
+      background:linear-gradient(90deg, var(--accent), transparent);
+      border-radius:999px;
+    }
+
+    h1{
+      font-family:"Bebas Neue", sans-serif;
+      font-size:clamp(3.2rem, 8vw, 6.5rem);
+      line-height:.92;
+      letter-spacing:.03em;
+      margin:14px 0 10px;
+    }
+
+    .intro p{
+      max-width:58ch;
+      color:var(--muted);
+      font-size:1rem;
+      line-height:1.7;
+      margin:0;
+    }
+
+    .quick-info{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:22px;
+    }
+
+    .pill{
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.05);
+      color:#dbeafe;
+      font-size:.92rem;
+    }
+
+    .game-panel{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      min-width:0;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .scoreboard{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .score-box{
+      padding:12px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      min-width:118px;
+    }
+
+    .score-label{
+      display:block;
+      color:var(--muted);
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+      margin-bottom:4px;
+    }
+
+    .score-value{
+      font-size:1.8rem;
+      font-weight:800;
+      line-height:1;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      padding:12px 16px;
+      border-radius:16px;
+      font:inherit;
+      font-weight:700;
+      color:#08111f;
+      background:linear-gradient(135deg, var(--accent), #c4f4ff);
+      transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      box-shadow:0 10px 30px rgba(110,231,255,0.22);
+    }
+
+    button.secondary{
+      color:var(--text);
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.12);
+      box-shadow:none;
+    }
+
+    button:hover{
+      transform:translateY(-2px) scale(1.02);
+      filter:saturate(1.1);
+    }
+
+    button:active{
+      transform:translateY(0) scale(.98);
+    }
+
+    .canvas-wrap{
+      position:relative;
+      border-radius:22px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px calc(50% - 1px), rgba(255,255,255,0.08) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      min-height:520px;
+    }
+
+    canvas{
+      display:block;
+      width:100%;
+      height:auto;
+      aspect-ratio:16/10;
+      background:
+        radial-gradient(circle at center, rgba(110,231,255,0.08), transparent 48%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.1));
+    }
+
+    .overlay{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:24px;
+      background:linear-gradient(180deg, rgba(8,17,31,0.18), rgba(8,17,31,0.42));
+      pointer-events:none;
+      opacity:1;
+      transition:opacity .25s ease;
+    }
+
+    .overlay.hidden{
+      opacity:0;
+    }
+
+    .overlay-box{
+      max-width:520px;
+      animation:floatIn .8s ease both;
+    }
+
+    .overlay h2{
+      margin:0 0 10px;
+      font-family:"Bebas Neue", sans-serif;
+      font-size:clamp(2.4rem, 5vw, 4rem);
+      letter-spacing:.05em;
+      line-height:.95;
+    }
+
+    .overlay p{
+      margin:0;
+      color:#d5e4f6;
+      line-height:1.7;
+    }
+
+    .hint{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:.94rem;
+    }
+
+    .sections{
+      margin-top:24px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:22px;
+    }
+
+    .code-panel{
+      padding:24px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .code-panel h3{
+      margin:0 0 12px;
+      font-family:"Bebas Neue", sans-serif;
+      letter-spacing:.06em;
+      font-size:2rem;
+    }
+
+    .code-panel p{
+      color:var(--muted);
+      line-height:1.7;
+      margin:0 0 14px;
+    }
+
+    pre{
+      margin:0;
+      padding:18px;
+      border-radius:18px;
+      overflow:auto;
+      font-size:.92rem;
+      line-height:1.65;
+      background:rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.08);
+      color:#dff6ff;
+    }
+
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+
+    .reveal{
+      opacity:0;
+      transform:translateY(24px);
+      transition:opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    @keyframes floatIn{
+      from{opacity:0; transform:translateY(18px) scale(.98)}
+      to{opacity:1; transform:translateY(0) scale(1)}
+    }
+
+    @media (max-width: 980px){
+      .hero,
+      .sections{
+        grid-template-columns:1fr;
+      }
+
+      .canvas-wrap{
+        min-height:auto;
+      }
+    }
+
+    @media (max-width: 640px){
+      .page{width:min(100% - 18px, 1200px)}
+      .intro,.game-panel,.code-panel{border-radius:20px}
+      .score-box{min-width:unset; flex:1}
+      .topbar{align-items:stretch}
+      .controls{width:100%}
+      .controls button{flex:1}
+      .hint{font-size:.88rem}
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <article class="intro reveal">
+        <div>
+          <span class="eyebrow">Mini Arcade Project</span>
+          <h1>Pingpong Ball Game</h1>
+          <p>
+            Eto ang isang malinis at magandang <strong>Ping Pong game</strong> na gawa sa
+            <strong>HTML, CSS, at JavaScript</strong>. Since sabi mo
+            <strong>“hiwa-hiwalayin mo like HTML sa CSS o sa JavaScript”</strong>,
+            nilagyan ko rin sa ibaba ng malinaw na sample structure para madali mong paghiwalayin
+            sa sariling files.
+          </p>
+        </div>
+        <div class="quick-info">
+          <span class="pill">Player vs Computer</span>
+          <span class="pill">W / S Keys</span>
+          <span class="pill">Responsive Canvas</span>
+          <span class="pill">Hiwalay na sample code structure</span>
+        </div>
+      </article>
+
+      <section class="game-panel reveal">
+        <div class="topbar">
+          <div class="scoreboard">
+            <div class="score-box">
+              <span class="score-label">Player</span>
+              <span class="score-value" id="playerScore">0</span>
+            </div>
+            <div class="score-box">
+              <span class="score-label">Computer</span>
+              <span class="score-value" id="aiScore">0</span>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="startBtn">Start Game</button>
+            <button id="resetBtn" class="secondary">Reset</button>
+          </div>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="960" height="600" aria-label="Ping pong game canvas"></canvas>
+          <div class="overlay" id="overlay">
+            <div class="overlay-box">
+              <h2>Ready to Play?</h2>
+              <p>
+                Gamitin ang <strong>W</strong> para umakyat at <strong>S</strong> para bumaba.
+                Pindutin ang <strong>Start Game</strong> para magsimula.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hint">
+          <span>Control: <strong>W</strong> / <strong>S</strong></span>
+          <span>Goal: Maunang makakuha ng 5 points</span>
+        </div>
+      </section>
+    </section>
+
+    <section class="sections">
+      <article class="code-panel reveal">
+        <h3>HTML file</h3>
+        <p>
+          Kung gusto mo talagang magkakahiwalay, ito ang basic laman ng
+          <strong>index.html</strong>:
+        </p>
+        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="tl"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8" /&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+  &lt;title&gt;Ping Pong Game&lt;/title&gt;
+  &lt;link rel="stylesheet" href="style.css" /&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;canvas id="gameCanvas" width="960" height="600"&gt;&lt;/canvas&gt;
+  &lt;script src="script.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+      </article>
+
+      <article class="code-panel reveal">
+        <h3>CSS at JavaScript</h3>
+        <p>
+          Ang design ay nasa <strong>style.css</strong> at ang galaw ng game ay nasa
+          <strong>script.js</strong>. Sa page na ito, pinagsama ko sila sa iisang HTML
+          para diretso mong ma-run agad.
+        </p>
+        <pre><code>/* style.css */
+body {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: #08111f;
+}
+
+canvas {
+  max-width: 100%;
+  border-radius: 16px;
+}
+
+/* script.js */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// dito ilalagay ang ball movement,
+// paddle controls, collision, score, at game loop</code></pre>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const playerScoreEl = document.getElementById('playerScore');
+    const aiScoreEl = document.getElementById('aiScore');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const overlay = document.getElementById('overlay');
+
+    let gameRunning = false;
+    let animationId = null;
+    const winningScore = 5;
+
+    const state = {
+      playerScore: 0,
+      aiScore: 0,
+      keys: { w: false, s: false }
+    };
+
+    const paddle = {
+      width: 16,
+      height: 110,
+      speed: 7
+    };
+
+    const player = {
+      x: 28,
+      y: canvas.height / 2 - paddle.height / 2,
+      width: paddle.width,
+      height: paddle.height,
+      dy: 0
+    };
+
+    const ai = {
+      x: canvas.width - 28 - paddle.width,
+      y: canvas.height / 2 - paddle.height / 2,
+      width: paddle.width,
+      height: paddle.height,
+      speed: 5.2
+    };
+
+    const ball = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 10,
+      speed: 5.4,
+      dx: 5.4,
+      dy: 3.6
+    };
+
+    function drawRoundedRect(x, y, w, h, r, fillStyle) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+
+    function drawNet() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.16)';
+      const segmentHeight = 22;
+      const gap = 14;
+      for (let y = 16; y < canvas.height - 16; y += segmentHeight + gap) {
+        ctx.fillRect(canvas.width / 2 - 2, y, 4, segmentHeight);
+      }
+      ctx.restore();
+    }
+
+    function drawArenaGlow() {
+      const grad = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 80,
+        canvas.width / 2, canvas.height / 2, 320
+      );
+      grad.addColorStop(0, 'rgba(110,231,255,0.10)');
+      grad.addColorStop(1, 'rgba(110,231,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawPaddle(entity, colorA, colorB) {
+      const gradient = ctx.createLinearGradient(entity.x, entity.y, entity.x + entity.width, entity.y + entity.height);
+      gradient.addColorStop(0, colorA);
+      gradient.addColorStop(1, colorB);
+      drawRoundedRect(entity.x, entity.y, entity.width, entity.height, 10, gradient);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(entity.x + 3, entity.y + 6, 3, entity.height - 12);
+    }
+
+    function drawBall() {
+      ctx.save();
+      ctx.shadowColor = 'rgba(110,231,255,0.6)';
+      ctx.shadowBlur = 22;
+      const grad = ctx.createRadialGradient(ball.x - 3, ball.y - 3, 2, ball.x, ball.y, ball.radius + 5);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.55, '#b7f3ff');
+      grad.addColorStop(1, '#6ee7ff');
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawScoreInside() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.09)';
+      ctx.font = '800 80px Inter';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.playerScore, canvas.width * 0.25, 64);
+      ctx.fillText(state.aiScore, canvas.width * 0.75, 64);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bgGrad.addColorStop(0, 'rgba(255,255,255,0.015)');
+      bgGrad.addColorStop(1, 'rgba(0,0,0,0.18)');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawArenaGlow();
+      drawNet();
+      drawScoreInside();
+      drawPaddle(player, '#6ee7ff', '#3b82f6');
+      drawPaddle(ai, '#c084fc', '#8b5cf6');
+      drawBall();
+    }
+
+    function resetBall(direction = 1) {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.speed = 5.4;
+      ball.dx = 5.4 * direction;
+      ball.dy = (Math.random() * 4 - 2) || 2;
+    }
+
+    function resetGame() {
+      state.playerScore = 0;
+      state.aiScore = 0;
+      updateScore();
+      player.y = canvas.height / 2 - player.height / 2;
+      ai.y = canvas.height / 2 - ai.height / 2;
+      resetBall(Math.random() > 0.5 ? 1 : -1);
+      gameRunning = false;
+      overlay.classList.remove('hidden');
+      overlay.querySelector('h2').textContent = 'Ready to Play?';
+      overlay.querySelector('p').innerHTML = 'Gamitin ang <strong>W</strong> para umakyat at <strong>S</strong> para bumaba. Pindutin ang <strong>Start Game</strong> para magsimula.';
+      cancelAnimationFrame(animationId);
+      draw();
+    }
+
+    function updateScore() {
+      playerScoreEl.textContent = state.playerScore;
+      aiScoreEl.textContent = state.aiScore;
+    }
+
+    function clampPaddles() {
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+      ai.y = Math.max(0, Math.min(canvas.height - ai.height, ai.y));
+    }
+
+    function updatePlayer() {
+      if (state.keys.w) player.y -= paddle.speed;
+      if (state.keys.s) player.y += paddle.speed;
+    }
+
+    function updateAI() {
+      const target = ball.y - ai.height / 2;
+      if (ai.y + ai.height / 2 < ball.y - 10) {
+        ai.y += ai.speed;
+      } else if (ai.y + ai.height / 2 > ball.y + 10) {
+        ai.y -= ai.speed;
+      }
+
+      if (Math.abs(target - ai.y) < ai.speed) {
+        ai.y = target;
+      }
+    }
+
+    function ballHitsPaddle(p) {
+      return (
+        ball.x - ball.radius < p.x + p.width &&
+        ball.x + ball.radius > p.x &&
+        ball.y + ball.radius > p.y &&
+        ball.y - ball.radius < p.y + p.height
+      );
+    }
+
+    function updateBall() {
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= canvas.height) {
+        ball.dy *= -1;
+      }
+
+      if (ballHitsPaddle(player) && ball.dx < 0) {
+        const collidePoint = (ball.y - (player.y + player.height / 2)) / (player.height / 2);
+        const angle = collidePoint * (Math.PI / 4);
+        ball.speed += 0.35;
+        ball.dx = Math.cos(angle) * ball.speed;
+        ball.dy = Math.sin(angle) * ball.speed;
+        ball.x = player.x + player.width + ball.radius;
+      }
+
+      if (ballHitsPaddle(ai) && ball.dx > 0) {
+        const collidePoint = (ball.y - (ai.y + ai.height / 2)) / (ai.height / 2);
+        const angle = collidePoint * (Math.PI / 4);
+        ball.speed += 0.35;
+        ball.dx = -Math.cos(angle) * ball.speed;
+        ball.dy = Math.sin(angle) * ball.speed;
+        ball.x = ai.x - ball.radius;
+      }
+
+      if (ball.x + ball.radius < 0) {
+        state.aiScore++;
+        updateScore();
+        checkWinner();
+        if (gameRunning) resetBall(1);
+      }
+
+      if (ball.x - ball.radius > canvas.width) {
+        state.playerScore++;
+        updateScore();
+        checkWinner();
+        if (gameRunning) resetBall(-1);
+      }
+    }
+
+    function checkWinner() {
+      if (state.playerScore >= winningScore || state.aiScore >= winningScore) {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        overlay.classList.remove('hidden');
+        if (state.playerScore > state.aiScore) {
+          overlay.querySelector('h2').textContent = 'Panalo Ka!';
+          overlay.querySelector('p').innerHTML = 'Nice game. Pindutin ang <strong>Start Game</strong> para ulitin ang laban.';
+        } else {
+          overlay.querySelector('h2').textContent = 'Computer Wins';
+          overlay.querySelector('p').innerHTML = 'Subukan mo ulit. Pindutin ang <strong>Start Game</strong> para rematch.';
+        }
+      }
+    }
+
+    function loop() {
+      if (!gameRunning) return;
+      updatePlayer();
+      updateAI();
+      updateBall();
+      clampPaddles();
+      draw();
+      animationId = requestAnimationFrame(loop);
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (state.playerScore >= winningScore || state.aiScore >= winningScore) {
+        state.playerScore = 0;
+        state.aiScore = 0;
+        updateScore();
+        resetBall(Math.random() > 0.5 ? 1 : -1);
+      }
+
+      if (!gameRunning) {
+        gameRunning = true;
+        overlay.classList.add('hidden');
+        loop();
+      }
+    });
+
+    resetBtn.addEventListener('click', resetGame);
+
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w') state.keys.w = true;
+      if (key === 's') state.keys.s = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w') state.keys.w = false;
+      if (key === 's') state.keys.s = false;
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    resetBall(1);
+    draw();
+  </script>
+</body>
+</html>
